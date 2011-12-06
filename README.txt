@@ -110,5 +110,7 @@ Testing
   cd marmelune.games.circularroledealer
   # Bootstrap
   bin/bootstrap
+  # Deploy
+  bin/buildout -N
   # Run tests
   bin/nosetests --with-doctest --rednose src/marmelune/games/circularroledealer/

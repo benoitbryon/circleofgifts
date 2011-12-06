@@ -60,8 +60,8 @@ class CircularDealer(object):
     Each player is preceded by another player, and followed by another, so
     that the whole players form a ring.
     """
-    def __init__(self, players=[], distribution_history=[]):
-        self.distribution_history = distribution_history
+    def __init__(self, players=[], history=[]):
+        self.history = history
         self.players = players
         default_sort_callback = random_copy
         self.sort_players_callback = default_sort_callback
@@ -117,6 +117,6 @@ class CircularDealer(object):
             distribution.extend(item)
 
         # Remember history
-        self.distribution_history.append(distribution)
+        self.history.append(distribution)
 
         return distribution
