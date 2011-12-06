@@ -1,0 +1,20 @@
+# Binaries, except bootstrap
+/bin/*
+!/bin/bootstrap
+
+# Documentation builds
+/docs/_build
+
+# Local configuration
+/etc/*
+
+# External libraries
+/lib/*
+
+# Data files
+/var/*
+
+# Python
+*.egg-info
+*.pyc
+*.pyo
