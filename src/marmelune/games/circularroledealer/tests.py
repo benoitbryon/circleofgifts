@@ -12,6 +12,6 @@ class CircularDealerTestCase(unittest.TestCase):
         dealer = CircularDealer(players)
         dealer.sort_players_callback = lambda x: sorted(x)
         dealer.sort_teams_callback = lambda x: sorted(x)
-        deal = dealer()
+        deal = dealer.deal()
         self.assertEqual(deal, ['Jeanne', 'Paul', 'Sandra', 'Julie', 'Pierre',
                                 'Sylvain'])

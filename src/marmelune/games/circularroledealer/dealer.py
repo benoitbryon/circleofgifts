@@ -67,7 +67,7 @@ class CircularDealer(object):
         self.sort_players_callback = default_sort_callback
         self.sort_teams_callback = default_sort_callback
 
-    def __call__(self):
+    def deal(self):
         """Does the distribution."""
         # Work on copies
         players = copy.deepcopy(self.players)

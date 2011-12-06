@@ -71,6 +71,7 @@ Known issues
 
 * Not accurate with very small amount of players or teams.
 * Teams of more than 2 players are not supported.
+* The implementation doesn't cover all permutations.
 
 Usage
 =====
@@ -95,9 +96,9 @@ Usage
              ['Frida', 'Frank'],
             ]
   dealer = CircularDealer(players)
-  dealer()
-  dealer()
-  dealer()
+  dealer.deal()
+  dealer.deal()
+  dealer.deal()
   dealer.history
 
 Testing
