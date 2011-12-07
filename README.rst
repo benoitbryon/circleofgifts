@@ -136,7 +136,7 @@ Another sample script that you can run with bin/python sample.py
 Testing
 =======
 
-.. sourcecode:: sh
+::
 
   # Download project
   git clone https://github.com/Sullivanbryon/marmelune.games.circularroledealer
