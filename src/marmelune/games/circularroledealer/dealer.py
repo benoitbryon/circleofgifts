@@ -67,7 +67,7 @@ class CircularDealer(object):
         self.sort_players_callback = default_sort_callback
         self.sort_teams_callback = default_sort_callback
 
-    def deal(self):
+    def deal(self, remember=True):
         """Does the distribution."""
         # Work on copies
         players = copy.deepcopy(self.players)
@@ -117,6 +117,55 @@ class CircularDealer(object):
             distribution.extend(item)
 
         # Remember history
-        self.history.append(distribution)
+        if remember:
+            self.history.append(distribution)
 
         return distribution
+
+    def deal_with_respect_to_history(self, history_level=None, remember=True):
+        """Performs a deal but adds some rules related to history."""
+        is_deal_valid = False
+        history_level = len(self.history)
+        while not is_deal_valid:
+            tries = len(self.players) * 42  # Completely arbitrary number!
+                                            # May be computed with some
+                                            # statistics.
+            for i in range(tries):
+                #print "try %d" % i
+                deal = self.deal(remember=False)
+                is_deal_valid = True
+                for previous_deal in self.history[-1 - history_level:]:
+                    if not self.is_deal_valid(deal, previous_deal):
+                        is_deal_valid = False
+                        break
+                if is_deal_valid:  # YES! we found a valid deal!
+                    break
+            if not is_deal_valid:  # Prepare next iteration.
+                history_level -= 1
+                #print "decreasing history level => %d" % history_level
+
+        if remember:
+            self.history.append(deal)
+
+        return deal
+
+    def is_deal_valid(self, deal, former_deal):
+        """Return boolean whether the deal is valid compared to former one."""
+        # Deal is invalid if one sequence is repeated from left to right
+        for i in range(-1, len(deal) -1):
+            sequence = (deal[i], deal[i+1])
+            for j in range(-1, len(former_deal) - 1):
+                former_sequence = (former_deal[j], former_deal[j+1])
+                if sequence == former_sequence:
+                    return False
+
+        # Deal is invalid if one sequence is repeated from right to left
+        reversed_deal = list(reversed(deal))
+        for i in range(-1, len(deal) -1):
+            sequence = (reversed_deal[i], reversed_deal[i+1])
+            for j in range(-1, len(former_deal) - 1):
+                former_sequence = (former_deal[j], former_deal[j+1])
+                if sequence == former_sequence:
+                    return False
+        
+        return True
