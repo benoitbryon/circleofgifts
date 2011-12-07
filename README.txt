@@ -84,7 +84,7 @@ Usage
   * run "bin/bpython" in a shell;
   * then type the following commands in the bpython shell.
 
-.. code-block:: python
+::
 
   from marmelune.games.circularroledealer.dealer import CircularDealer
 
@@ -101,13 +101,45 @@ Usage
   dealer.deal()
   dealer.history
 
+Another sample script that you can run with bin/python sample.py
+
+::
+
+  # Save this as sample.py
+  from marmelune.games.circularroledealer import dealer
+
+
+  players = [['Pedro', 'Simone'],
+             ['Louis', 'Paulette'],
+             ['Marcel', 'Chuck'],
+             ['Regine', 'Paul'],
+             ['Sullivan', 'Clara'],
+             ['Maria', 'Thomas'],
+            ]
+
+  d = dealer.CircularDealer(players)
+
+  # 1st round.
+  d.history.append(['Simone', 'Paulette', 'Paul', 'Sullivan', 'Maria',
+                    'Chuck', 'Pedro', 'Regine', 'Louis', 'Marcel', 'Clara'])
+  # 2nd round.
+  d.history.append(['Simone', 'Sullivan', 'Paulette', 'Regine', 'Marcel',
+                    'Maria', 'Pedro', 'Clara', 'Chuck', 'Paul', 'Louis'])
+  # 3rd round. Notice that Thomas was not present in previous rounds.
+  d.history.append(['Clara', 'Regine', 'Maria', 'Simone', 'Chuck', 'Louis',
+                    'Sullivan', 'Pedro', 'Paulette', 'Thomas', 'Marcel',
+                    'Paul'])
+  # Next!
+  print d.deal_with_respect_to_history()
+
+
 Testing
 =======
 
 .. sourcecode:: sh
 
   # Download project
-  git clone https://github.com/benoitbryon/marmelune.games.circularroledealer
+  git clone https://github.com/Sullivanbryon/marmelune.games.circularroledealer
   cd marmelune.games.circularroledealer
   # Bootstrap
   bin/bootstrap
