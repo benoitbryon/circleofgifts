@@ -18,7 +18,7 @@ setup(name='marmelune.games.circularroledealer',
       version=version,
       description="Utility to distribute players in a game, so that the " \
                   "whole players form a circle.",
-      long_description=open("README.txt").read() + "\n" +
+      long_description=open("README").read() + "\n" +
                        open(os.path.join("docs", "HISTORY.txt")).read(),
       # Get more strings from
       # http://pypi.python.org/pypi?:action=list_classifiers
