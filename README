@@ -1,80 +1,90 @@
-####################
-Circular role dealer
-####################
+#############
+circleofgifts
+#############
 
+Small application to deal roles in a game.
+
+
+*****
 Story
-=====
+*****
 
-This application has been created to distribute roles in a game, with the
-following rules:
+This application was created to manage gifts offered at a party:
 
-* there are two roles: giver and receiver;
-* a "giver" gives something to a "receiver";
-* everybody is "giver" once, and only once;
-* everybody is "receiver" once, and only once;
-* players are grouped in teams of one or two persons;
-* a player is member of one and only one team;
-* members of a team cannot give to or receive from other members in the same
-  team;
-* roles are randomly distributed;
-* the schema of all giver-receiver connections makes one big ring which
-  includes all participants. It means that there cannot be two rings, only one.
+* guests are players
+* every player is a "hunter": he is affected a "target" (another guest)
+* reciprocally, every player is a target: he is hunted by someone else
+* chained targets form a ring.
+* every hunter brings a present to his target.
 
-Optionally, if we distribute roles several times:
+.. note::
 
-* a player cannot give twice to the same person (change distribution)
-* a player cannot give to someone who was his former giver (no "revenge")
-* with respect to at least one level in history
+   Similar distribution can be used in `killer-like games
+   <http://en.wikipedia.org/wiki/Assassin_%28game%29>`_
 
-Which game?
-===========
+The deal takes care of additional rules such as:
 
-The first use-case was the following:
+* the deal is randomly generated
+* a player can't hunt someone in his team (wife, husband, brother... or
+  whatever you consider a team)
 
-* friends or family are invited to a party
-* everybody has to bring a small gift dedicated to someone else
-  (giver/receiver)
-* nobody knows who will give him/her a present (surprise!)
-* teams are made of couples (you don't give something to your wife/husband/...)
+If deal is repeated (multiple turns), then additional rules are applied:
 
-... but there may be other use-cases!
+* one shouldn't have the same target again (no repetition)
+* one shouldn't hunt a person he was hunted by (limit revenges)
+* ... and other more or less complicated rules to promote changes.
 
+
+*******
 Example
-=======
+*******
 
-Here is the family of Peter and Paula, they have 3 sons called Patrick, Mark
-and Steve. Patrick lives with Joe. Mark is single. Steve lives with Sandra.
-Here are the teams:
+At a party, here the list of guests:
 
-* Peter, Paula
-* Patrick, Joe
+* Peter and Paula
+* Patrick and Joe
 * Mark
-* Steve, Sandra
+* Steve and Sandra
 
-After the random distribution, we can obtain the following ring:
+After a random distribution, we can obtain the following ring:
 
-* Peter   gives to Joe
-* Joe     gives to Sandra
-* Sandra  gives to Mark
-* Mark    gives to Paula
-* Paula   gives to Steve
-* Steve   gives to Patrick
-* Patrick gives to Peter
+::
 
-It can be displayed as a list: Peter, Joe, Sandra, Mark, Paula, Steve,
-Patrick... and Peter again.
+  -> Peter -> Joe -> Sandra -> Mark -> Paula -> Steve -> Patrick -> Peter
 
-Of course, you can use this utility with friends!
+Which means Peter gives to Joe, Joe to Sandra... and Patrick to Peter.
 
+Next turn, a team joins the game, but Mark leaves. Here are players:
+
+* Peter and Paula
+* Patrick and Joe
+* Steve and Sandra
+* Roger and Gary
+
+Here is a valid random new distribution:
+
+::
+
+  -> Peter -> Steve -> Paula -> Roger -> Patrick -> Gary -> Sandra -> Joe -> Peter
+
+
+************
 Known issues
-============
+************
 
-* Not accurate with very small amount of players or teams.
-* Teams of more than 2 players are not supported.
-* The implementation doesn't cover all permutations.
+* Greedy! Almost all combinations are generated to get the best result against
+  "promote change" rules. Some optimizations are implemented, but it may be
+  possible to improve!
 
+* History-related rules are not efficient with very small amount of players or
+  teams. Typical usage is >6 teams and >12 players.
+
+* Teams of more than 2 players are currently not supported.
+
+
+*****
 Usage
-=====
+*****
 
 .. note::
 
