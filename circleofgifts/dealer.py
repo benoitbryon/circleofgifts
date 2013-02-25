@@ -17,7 +17,6 @@ def random_copy(iterable, random_callback=random.random):
     >>> randomized = random_copy(l)
     >>> randomized is not l
     True
-    >>> 
     >>> all([item in l for item in randomized])
     True
     >>> len(randomized) == len(l)
@@ -90,16 +89,18 @@ def permutations(items, sort_callback=copy.deepcopy):
 
 def fibo2(n):
     """Renvoie F_{n-1}, F_n"""
-    if (n == 0):  # cas de base
+    if (n == 0):  # Base case.
         return 1, 0  # F_{-1}, F_0
-    else:         # recurrency
-        f_k_1, f_k = fibo2(n//2)        # F_{k-1}, F_k   avec k = n/2
-        f2_k = f_k**2                   # F_k^2
-        if n%2 == 0:  # n pair
-            return f2_k + f_k_1**2,    f_k*f_k_1*2 + f2_k       # F_{2k-1}, F_{2k}
-        else:         # n impair
-            return f_k*f_k_1*2 + f2_k, (f_k + f_k_1)**2 + f2_k  # F_{2k},   F_{2k+1}
- 
+    else:  # Recurrency.
+        f_k_1, f_k = fibo2(n // 2)  # F_{k-1}, F_k when k = n/2
+        f2_k = f_k ** 2  # F_k^2
+        if n % 2 == 0:  # n is even
+            return (f2_k + f_k_1 ** 2,
+                    f_k * f_k_1 * 2 + f2_k)  # F_{2k-1}, F_{2k}
+        else:  # n is odd
+            return (f_k * f_k_1 * 2 + f2_k,
+                    (f_k + f_k_1) ** 2 + f2_k)  # F_{2k}, F_{2k+1}
+
 
 def fibonacci(n):
     """Return fibonacci level n.
@@ -273,7 +274,7 @@ class Dealer(object):
         items.append(items[0])
         count = 0
         for i in range(0, len(items) - 1):
-            if items[i+1] in self.teammates(items[i]):
+            if items[i + 1] in self.teammates(items[i]):
                 count += 1
         return count
 
@@ -306,7 +307,7 @@ class Dealer(object):
         items = deal[:]
         items.append(items[0])
         for i in range(0, len(items) - 1):
-            targets.append((items[i], items[i+1]))
+            targets.append((items[i], items[i + 1]))
         return targets
 
     def targets_in_history(self, history_level):
@@ -368,7 +369,7 @@ class Dealer(object):
         reference_targets = self.targets_in_history(history_level)
         count = self.count_same_target(candidate_targets, reference_targets)
         return count * self.coefficient(coefficient, history_level)
- 
+
     def count_direct_revenge(self, candidate_targets, reference_targets):
         """Count occurences where hunter in candidate is target in reference.
 
@@ -602,7 +603,7 @@ class Dealer(object):
             # Scores without history.
             for operation, coeff in [
                 ('score_same_team', 12),  # coeff 12 => start at 144, then 610...
-                ('score_team_target_team', 4), # 3, 13, 55...
+                ('score_team_target_team', 4),  # 3, 13, 55...
                 ]:
                 score = getattr(self, operation)(deal, coeff)
                 total += score
@@ -647,17 +648,17 @@ class Dealer(object):
         """Does the distribution."""
         # Work on copies
         players = copy.deepcopy(self.players)
-        
+
         # Initialize the distribution
         distribution = []
 
         # Sort teams
         players = self.sort_teams_callback(players)
-        
+
         # Sort players in each team
         for i, team in enumerate(players):
             players[i] = self.sort_players_callback(team)
-        
+
         # Find the first team with 2 players.
         # Else, implementation fails (could pass in the future...)
         markers = None
@@ -667,27 +668,27 @@ class Dealer(object):
                 del players[i]
                 break
         if not markers:
-            raise NotImplementedError('As for now, cannot proceed if there ' \
+            raise NotImplementedError('As for now, cannot proceed if there '
                                       'is not at least 2 teams of 2 members.')
-        
+
         # Assert that there is at least one other team with 2 players,
         # else, implementation fails (could be implemented in the future...)
         implemented = any([len(team) == 2 for team in players])
         if not implemented:
-            raise NotImplementedError('As for now, cannot proceed if there ' \
+            raise NotImplementedError('As for now, cannot proceed if there '
                                       'is not at least 2 teams of 2 members.')
-        
+
         # Create 2 lists which exclude markers
         left = []
         right = []
         for team in players:
             left.extend(team[0:1])
             right.extend(team[1:2])
-        
+
         # Shuffle left and right lists
         left = self.sort_players_callback(left)
         right = self.sort_players_callback(right)
-        
+
         # Concatenate firt marker, left, second marker then right
         for item in markers[0:1], left, markers[1:2], right:
             distribution.extend(item)
@@ -728,20 +729,20 @@ class Dealer(object):
     def is_deal_valid(self, deal, former_deal):
         """Return boolean whether the deal is valid compared to former one."""
         # Deal is invalid if one sequence is repeated from left to right
-        for i in range(-1, len(deal) -1):
-            sequence = (deal[i], deal[i+1])
+        for i in range(-1, len(deal) - 1):
+            sequence = (deal[i], deal[i + 1])
             for j in range(-1, len(former_deal) - 1):
-                former_sequence = (former_deal[j], former_deal[j+1])
+                former_sequence = (former_deal[j], former_deal[j + 1])
                 if sequence == former_sequence:
                     return False
 
         # Deal is invalid if one sequence is repeated from right to left
         reversed_deal = list(reversed(deal))
-        for i in range(-1, len(deal) -1):
-            sequence = (reversed_deal[i], reversed_deal[i+1])
+        for i in range(-1, len(deal) - 1):
+            sequence = (reversed_deal[i], reversed_deal[i + 1])
             for j in range(-1, len(former_deal) - 1):
-                former_sequence = (former_deal[j], former_deal[j+1])
+                former_sequence = (former_deal[j], former_deal[j + 1])
                 if sequence == former_sequence:
                     return False
-        
+
         return True

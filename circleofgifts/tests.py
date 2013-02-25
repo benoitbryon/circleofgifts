@@ -1,15 +1,15 @@
 import unittest
 
-from dealer import CircularDealer
+from circleofgifts.dealer import Dealer
 
 
-class CircularDealerTestCase(unittest.TestCase):
+class DealerTestCase(unittest.TestCase):
     def test_sorted_deal(self):
         """Test deal which uses sorted() as the sort method for both teams
         and players. This makes the results predicable."""
         players = [['Pierre', 'Paul'], ['Jeanne', 'Julie'],
                    ['Sylvain', 'Sandra']]
-        dealer = CircularDealer(players)
+        dealer = Dealer(players)
         dealer.sort_players_callback = lambda x: sorted(x)
         dealer.sort_teams_callback = lambda x: sorted(x)
         deal = dealer.deal()
@@ -22,7 +22,7 @@ class CircularDealerTestCase(unittest.TestCase):
         # same result again and again, whatever the history.
         players = [['Pierre', 'Paul'], ['Jeanne', 'Julie'],
                    ['Sylvain', 'Sandra']]
-        dealer = CircularDealer(players)
+        dealer = Dealer(players)
         dealer.sort_players_callback = lambda x: sorted(x)
         dealer.sort_teams_callback = lambda x: sorted(x)
         deal = dealer.deal_with_respect_to_history()
@@ -33,7 +33,7 @@ class CircularDealerTestCase(unittest.TestCase):
                                 'Sylvain'])
 
     def test_is_deal_valid(self):
-        dealer = CircularDealer([1, 2, 3, 4, 5, 6])
+        dealer = Dealer([1, 2, 3, 4, 5, 6])
         # No repetition: valid
         self.assertTrue(dealer.is_deal_valid([1, 2, 3, 4, 5, 6], [1, 3, 5, 2, 6, 4]))
         # Exactly the same: invalid

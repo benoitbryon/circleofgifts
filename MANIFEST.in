@@ -1,0 +1,3 @@
+recursive-include circleofgifts *
+global-exclude *.pyc
+include README VERSION CHANGELOG LICENSE AUTHORS INSTALL
