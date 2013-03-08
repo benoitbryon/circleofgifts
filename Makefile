@@ -5,6 +5,7 @@ BIN_DIR = $(ROOT_DIR)/bin
 DATA_DIR = $(ROOT_DIR)/var
 WGET = wget
 PYTHON = $(shell which python)
+PROJECT = $(shell $(PYTHON) -c "import setup; print setup.NAME")
 BUILDOUT_CFG = $(ROOT_DIR)/etc/buildout.cfg
 BUILDOUT_DIR = $(ROOT_DIR)/lib/buildout
 BUILDOUT_VERSION = 1.7.0
@@ -45,5 +46,5 @@ maintainer-clean: distclean
 
 
 test:
-	$(NOSE) --config $(ROOT_DIR)/etc/nose.cfg circleofgifts
+	$(NOSE) --config $(ROOT_DIR)/etc/nose.cfg $(PROJECT)
 	rm -f $(ROOT_DIR)/.coverage
