@@ -88,7 +88,7 @@ def permutations(items, sort_callback=copy.deepcopy):
 
 
 def fibo2(n):
-    """Renvoie F_{n-1}, F_n"""
+    """Return F_{n-1}, F_n"""
     if (n == 0):  # Base case.
         return 1, 0  # F_{-1}, F_0
     else:  # Recurrency.
