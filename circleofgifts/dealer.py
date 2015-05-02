@@ -57,8 +57,8 @@ def random_copy(iterable, random_callback=random.random):
     return result
 
 
-def permutations(items, sort_callback=copy.deepcopy):
-    """Generator of permutations for item.
+def permutations(items, sort_callback=None):
+    """Generator of sorted permutations for items.
 
     >>> list(permutations([]))
     []
@@ -66,25 +66,45 @@ def permutations(items, sort_callback=copy.deepcopy):
     [[1]]
     >>> list(permutations([1, 2]))
     [[1, 2], [2, 1]]
+    >>> list(permutations([1, 2, 3]))
+    [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]]
 
-    The optional argument ``sort_callback`` allows you to sort (or shuffle)
-    permutations. By default, ``sort_callback`` is ``copy.deepcopy``.
+    """
+    import itertools
+    if items:
+        for item in itertools.permutations(items, len(items)):
+            yield list(item)
+
+
+def unique_circular_permutations(items, sort_callback=copy.deepcopy):
+    """Generator of permutations, whithout circular duplicates.
+
+    First item in results is predictable: always the first in ``items``.
+    It serves as a pivot and is kept as is. Other items are sorted using
+    ``sort_callback``.
+
+    >>> list(unique_circular_permutations([]))
+    []
+    >>> list(unique_circular_permutations([1]))
+    [[1]]
+    >>> list(unique_circular_permutations([1, 2]))
+    [[1, 2]]
+    >>> list(unique_circular_permutations([1, 2, 3], sort_callback=sorted))
+    [[1, 2, 3], [1, 3, 2]]
+    >>> list(unique_circular_permutations([1, 2, 3, 4], sort_callback=sorted))
+    [[1, 2, 3, 4], [1, 2, 4, 3], [1, 3, 2, 4], [1, 3, 4, 2], [1, 4, 2, 3], [1, 4, 3, 2]]
 
     """
     if not items:
         pass
     else:
-        items = sort_callback(items)
-        index = 0
-        for pivot in iter(items):
-            del items[index]
-            if items:
-                for sub_permutations in permutations(items, sort_callback):
-                    yield [pivot] + list(sub_permutations)
-            else:
-                yield [pivot]
-            items.insert(index, pivot)
-            index += 1
+        items = copy.deepcopy(items)
+        pivot = items.pop(0)
+        if not items:
+            yield [pivot]
+        else:
+            for permutation in permutations(items, sort_callback=sort_callback):
+                yield [pivot] + permutation
 
 
 def fibo2(n):
@@ -157,38 +177,66 @@ class Dealer(object):
     def generate_permutations(self, sort_callback=copy.deepcopy):
         """Generate permutations with all players.
 
+        With respect to the following base rules:
+
+        * teammates cannot hunt each other.
+        * there are no circular (from left to right) duplicates.
+
+        With no players, you get an empty deal.
+
+        >>> players = []
+        >>> d = Dealer(players)
+        >>> list(d.generate_permutations())
+        []
+
+        If there is only one player, he is the result.
+
         >>> players = [['albert']]
         >>> d = Dealer(players)
-        >>> p = d.generate_permutations()
-        >>> p  # doctest: +ELLIPSIS
-        <generator object generate_permutations at 0x...>
-        >>> list(p)
+        >>> list(d.generate_permutations())
         [['albert']]
+
+        If there is only one team, you get an empty deal, since teammates
+        cannot hunt each other.
 
         >>> players = [['albert', 'allan']]
         >>> d = Dealer(players)
         >>> list(d.generate_permutations())
-        [['albert', 'allan']]
+        []
+
+        There are other cases without results because of the "can't hunt
+        teammate" rule.
+
+        >>> players = [['a1', 'a2'], ['b1']]
+        >>> d = Dealer(players)
+        >>> list(d.generate_permutations())
+        []
+
+        If there is two teams of one players, you get one result with the two
+        players, order is preserved.
 
         >>> players = [['albert'], ['bob']]
         >>> d = Dealer(players)
         >>> list(d.generate_permutations())
         [['albert', 'bob']]
 
-        >>> players = [['albert', 'allan', 'arthur']]
+        Here are results with more complex examples...
+
+        >>> players = [['a1'], ['b1'], ['c1']]
         >>> d = Dealer(players)
         >>> list(d.generate_permutations())
-        [['albert', 'allan', 'arthur'], ['albert', 'arthur', 'allan']]
+        [['a1', 'b1', 'c1'], ['a1', 'c1', 'b1']]
+
+        >>> players = [['a1', 'a2'], ['b1'], ['c1']]
+        >>> d = Dealer(players)
+        >>> list(d.generate_permutations(sort_callback=sorted))
+        [['a1', 'b1', 'a2', 'c1'], ['a1', 'c1', 'a2', 'b1']]
 
         """
         if self.all_players:
-            all_players = sort_callback(self.all_players)
-            pivot = all_players.pop(0)
-            if not all_players:
-                yield [pivot]
-            else:
-                for permutation in permutations(all_players, sort_callback):
-                    yield [pivot] + permutation
+            for result in unique_circular_permutations(self.all_players):
+                if not self.has_same_team(result):
+                    yield result
 
     def teammates(self, player):
         """Return list of teammates of player.
@@ -216,6 +264,40 @@ class Dealer(object):
                     self._teammates[p] = team[:]
                     self._teammates[p].remove(p)
         return self._teammates[player]
+
+    def has_same_team(self, deal):
+        """Return ``True`` if there is at least one "teammate hunt" in deal.
+
+        >>> players = [['a1', 'a2', 'a3'], ['b1'], ['c1', 'c2']]
+        >>> d = Dealer(players)
+        >>> d.has_same_team([])
+        False
+        >>> d.has_same_team(['a1'])
+        False
+        >>> d.has_same_team(['a1', 'b1'])
+        False
+        >>> d.has_same_team(['a1', 'a2', 'b1'])
+        True
+        >>> d.has_same_team(['a1', 'a3', 'b1'])
+        True
+        >>> d.has_same_team(['a1', 'b1', 'a2'])
+        True
+        >>> d.has_same_team(['a1', 'c1', 'c2'])
+        True
+
+        """
+        if not deal:
+            return False
+        if len(deal) == 1:
+            if not deal[0] in self.all_players:
+                raise KeyError(deal[0])
+            return False
+        items = deal[:]
+        items.append(items[0])  # Make deal circular.
+        for i in range(0, len(items) - 1):
+            if items[i + 1] in self.teammates(items[i]):
+                return True
+        return False
 
     def count_same_team(self, deal):
         """Count occurences in deal where player hunts a teammate.
@@ -277,10 +359,6 @@ class Dealer(object):
             if items[i + 1] in self.teammates(items[i]):
                 count += 1
         return count
-
-    def score_same_team(self, items, coefficient=11):
-        """Score when player's target is a teammate."""
-        return self.count_same_team(items) * self.coefficient(coefficient, 0)
 
     def targets(self, deal):
         """Return a list of tuples (HUNTER, TARGET) representing players.
@@ -365,10 +443,18 @@ class Dealer(object):
 
     def score_same_target(self, items, history_level, coefficient=10):
         """Score when player's target has already been his target."""
-        candidate_targets = self.targets(items)
-        reference_targets = self.targets_in_history(history_level)
-        count = self.count_same_target(candidate_targets, reference_targets)
-        return count * self.coefficient(coefficient, history_level)
+        candidate_targets = dict(self.targets(items))
+        reference_targets = dict(self.targets_in_history(history_level))
+        for player in self.all_players:
+            try:
+                if candidate_targets[player] == reference_targets[player]:
+                    history_threshold = \
+                        len(self.all_players) - len(self.teammates(player)) - 1
+                    if history_level < history_threshold:
+                        return -1  # Blocker!
+            except KeyError:
+                pass
+        return 1
 
     def count_direct_revenge(self, candidate_targets, reference_targets):
         """Count occurences where hunter in candidate is target in reference.
@@ -518,40 +604,32 @@ class Dealer(object):
 
     @property
     def history_threshold(self):
-        """Return the number of usable history levels.
+        """Return the number of meaningful history levels.
+
+        Threshold is always lower than or equal to history length.
+
+        >>> history = [1, 2]
+        >>> players = [['albert', 'allan'], ['bob', 'bill'], ['carl', 'cathy'], ['dilbert'], ['emily', 'erika']]
+        >>> d = Dealer(players=players, history=history)
+        >>> d.history_threshold
+        2
+
+        Else, thereshold is total number of players.
 
         >>> history = [1, 2, 3, 4, 5, 6]  # Fake history which is not limiting factor.
         >>> players = [['albert', 'allan'], ['bob', 'bill']]
         >>> d = Dealer(players=players, history=history)
         >>> d.history_threshold
-        1
+        4
 
         >>> history = [1, 2, 3, 4, 5, 6]  # Fake history which is not limiting factor.
         >>> players = [['albert', 'allan'], ['bob', 'bill'], ['carl', 'cathy']]
         >>> d = Dealer(players=players, history=history)
         >>> d.history_threshold
-        2
-
-        >>> history = [1, 2, 3, 4, 5, 6]  # Fake history which is not limiting factor.
-        >>> players = [['albert', 'allan'], ['bob', 'bill'], ['carl', 'cathy']]
-        >>> d = Dealer(players=players, history=history)
-        >>> d.history_threshold
-        2
-        
-        >>> history = [1, 2, 3, 4, 5, 6]  # Fake history which is not limiting factor.
-        >>> players = [['albert', 'allan'], ['bob', 'bill'], ['carl', 'cathy'], ['dilbert'], ['emily', 'erika']]
-        >>> d = Dealer(players=players, history=history)
-        >>> d.history_threshold
-        3
-        
-        >>> history = [1, 2]  # History is a limiting factor.
-        >>> players = [['albert', 'allan'], ['bob', 'bill'], ['carl', 'cathy'], ['dilbert'], ['emily', 'erika']]
-        >>> d = Dealer(players=players, history=history)
-        >>> d.history_threshold == len(history)
-        True
+        6
 
         """
-        threshold = (len(self.all_players) + len(self.players)) / 4
+        threshold = len(self.all_players)
         return min(threshold, len(self.history))
 
     def coefficient(self, base, history_level=0):
@@ -561,39 +639,29 @@ class Dealer(object):
         >>> players = [['albert', 'allan'], ['bob', 'bill']]
         >>> d = Dealer(players=players, history=history)
         >>> d.history_threshold
-        1
-        >>> d.coefficient(1, 1)  # history_level >= d.history_threshold
+        4
+        >>> d.coefficient(10, 4)  # history_level >= d.history_threshold
         0
-        >>> d.coefficient(1, 2)  # history_level >= d.history_threshold
-        0
-        >>> d.coefficient(1, 3)  # history_level >= d.history_threshold
-        0
-        >>> all([d.coefficient(base, 0) == fibonacci(base) for base in range(0, 20)])
+        >>> d.coefficient(10, 3) == fibonacci(10)
         True
-
-        >>> history = [1, 2, 3, 4, 5, 6]  # Fake history which is not limiting factor.
-        >>> players = [['albert', 'allan'], ['bob', 'bill'], ['carl', 'cathy'], ['dilbert'], ['emily', 'erika']]
-        >>> d = Dealer(players=players, history=history)
-        >>> d.history_threshold
-        3
-        >>> d.coefficient(3, 2) == fibonacci(3)  # Max history_level => fibonacci
+        >>> d.coefficient(10, 2) == fibonacci(10 + 2)
         True
-        >>> d.coefficient(3, 1) == fibonacci(3 + 1*3)
+        >>> d.coefficient(10, 1) == fibonacci(10 + 4)
         True
-        >>> d.coefficient(3, 0) == fibonacci(3 + 2*3)
+        >>> d.coefficient(10, 0) == fibonacci(10 + 6)
         True
 
         """
         if history_level >= self.history_threshold:
             return 0
-        history_factor = (self.history_threshold - history_level - 1) * 3
+        history_factor = (self.history_threshold - history_level - 1) * 2
         coefficient = fibonacci(base + history_factor)
         return coefficient
 
-    def newdeal(self):
+    def deal(self):
         best_result = None
         count_iterations = 0
-        for deal in self.generate_permutations(self.sort_players_callback):
+        for deal in self.generate_permutations():
             count_iterations += 1
             if count_iterations % 100000 == 0:
                 print "%d iterations..." % count_iterations
@@ -601,11 +669,11 @@ class Dealer(object):
             total = 0
             too_much = False
             # Scores without history.
-            for operation, coeff in [
-                ('score_same_team', 12),  # coeff 12 => start at 144, then 610...
-                ('score_team_target_team', 4),  # 3, 13, 55...
-                ]:
+            for operation, coeff in [('score_team_target_team', 5), ]:
                 score = getattr(self, operation)(deal, coeff)
+                if score == -1:
+                    too_much = True
+                    break
                 total += score
                 if best_result and total >= best_result['score']:
                     too_much = True
@@ -617,13 +685,16 @@ class Dealer(object):
             history_levels = self.history_threshold
             for i in range(0, history_levels):
                 for operation, coeff in [
-                    ('score_same_target', 10),  # start at 89, then 377...
-                    ('score_direct_revenge', 5),  # 5, 21, 89...
-                    ('score_target_teammate', 4),  # 3, 13, 55...
-                    ('score_same_target_as_teammate', 3),  # 2, 8, 34...
-                    ('score_teammate_revenge', 2),  # 1, 5, 21...
-                    ]:
+                        ('score_same_target', 12),  #
+                        ('score_direct_revenge', 7),  #
+                        ('score_target_teammate', 4),  # 3, 13, 55...
+                        ('score_same_target_as_teammate', 3),  # 2, 8, 34...
+                        ('score_teammate_revenge', 2),  # 1, 5, 21...
+                        ]:
                     score = getattr(self, operation)(deal, i, coeff)
+                    if score == -1:
+                        too_much = True
+                        break
                     total += score
                     if best_result and total >= best_result['score']:
                         too_much = True
@@ -643,106 +714,3 @@ class Dealer(object):
                 best_result = result
                 print '%d  --> %s' % (count_iterations, result)
                 yield result
-
-    def deal(self, remember=True):
-        """Does the distribution."""
-        # Work on copies
-        players = copy.deepcopy(self.players)
-
-        # Initialize the distribution
-        distribution = []
-
-        # Sort teams
-        players = self.sort_teams_callback(players)
-
-        # Sort players in each team
-        for i, team in enumerate(players):
-            players[i] = self.sort_players_callback(team)
-
-        # Find the first team with 2 players.
-        # Else, implementation fails (could pass in the future...)
-        markers = None
-        for i, team in enumerate(players):
-            if len(team) == 2:
-                markers = team
-                del players[i]
-                break
-        if not markers:
-            raise NotImplementedError('As for now, cannot proceed if there '
-                                      'is not at least 2 teams of 2 members.')
-
-        # Assert that there is at least one other team with 2 players,
-        # else, implementation fails (could be implemented in the future...)
-        implemented = any([len(team) == 2 for team in players])
-        if not implemented:
-            raise NotImplementedError('As for now, cannot proceed if there '
-                                      'is not at least 2 teams of 2 members.')
-
-        # Create 2 lists which exclude markers
-        left = []
-        right = []
-        for team in players:
-            left.extend(team[0:1])
-            right.extend(team[1:2])
-
-        # Shuffle left and right lists
-        left = self.sort_players_callback(left)
-        right = self.sort_players_callback(right)
-
-        # Concatenate firt marker, left, second marker then right
-        for item in markers[0:1], left, markers[1:2], right:
-            distribution.extend(item)
-
-        # Remember history
-        if remember:
-            self.history.append(distribution)
-
-        return distribution
-
-    def deal_with_respect_to_history(self, history_level=None, remember=True):
-        """Performs a deal but adds some rules related to history."""
-        is_deal_valid = False
-        history_level = len(self.history)
-        while not is_deal_valid:
-            tries = len(self.players) * 42  # Completely arbitrary number!
-                                            # May be computed with some
-                                            # statistics.
-            for i in range(tries):
-                #print "try %d" % i
-                deal = self.deal(remember=False)
-                is_deal_valid = True
-                for previous_deal in self.history[-1 - history_level:]:
-                    if not self.is_deal_valid(deal, previous_deal):
-                        is_deal_valid = False
-                        break
-                if is_deal_valid:  # YES! we found a valid deal!
-                    break
-            if not is_deal_valid:  # Prepare next iteration.
-                history_level -= 1
-                #print "decreasing history level => %d" % history_level
-
-        if remember:
-            self.history.append(deal)
-
-        return deal
-
-    def is_deal_valid(self, deal, former_deal):
-        """Return boolean whether the deal is valid compared to former one."""
-        # Deal is invalid if one sequence is repeated from left to right
-        for i in range(-1, len(deal) - 1):
-            sequence = (deal[i], deal[i + 1])
-            for j in range(-1, len(former_deal) - 1):
-                former_sequence = (former_deal[j], former_deal[j + 1])
-                if sequence == former_sequence:
-                    return False
-
-        # Deal is invalid if one sequence is repeated from right to left
-        reversed_deal = list(reversed(deal))
-        for i in range(-1, len(deal) - 1):
-            sequence = (reversed_deal[i], reversed_deal[i + 1])
-            for j in range(-1, len(former_deal) - 1):
-                former_sequence = (former_deal[j], former_deal[j + 1])
-                if sequence == former_sequence:
-                    return False
-
-        return True
