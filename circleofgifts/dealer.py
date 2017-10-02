@@ -6,6 +6,9 @@ import copy
 import random
 
 
+INVALID_RESULT = object()  # Pseudo-constant to mark invalid results.
+
+
 def random_copy(iterable, random_callback=random.random):
     """Shuffle iterable and return a randomized copy.
 
@@ -441,20 +444,23 @@ class Dealer(object):
                 count += 1
         return count
 
-    def score_same_target(self, items, history_level, coefficient=10):
+    def score_same_target(self, items, history_level, coefficient=20):
         """Score when player's target has already been his target."""
         candidate_targets = dict(self.targets(items))
         reference_targets = dict(self.targets_in_history(history_level))
+        count = 0
         for player in self.all_players:
             try:
                 if candidate_targets[player] == reference_targets[player]:
-                    history_threshold = \
-                        len(self.all_players) - len(self.teammates(player)) - 1
-                    if history_level < history_threshold:
-                        return -1  # Blocker!
+                    count += 1
+#                    history_threshold = \
+#                        len(self.all_players) - len(self.teammates(player)) - 1
+#                    if history_level < history_threshold:
+#                        print "A"
+#                        return INVALID_RESULT  # Blocker!
             except KeyError:
                 pass
-        return 1
+        return count * self.coefficient(coefficient, history_level)
 
     def count_direct_revenge(self, candidate_targets, reference_targets):
         """Count occurences where hunter in candidate is target in reference.
@@ -654,7 +660,8 @@ class Dealer(object):
         """
         if history_level >= self.history_threshold:
             return 0
-        history_factor = (self.history_threshold - history_level - 1) * 2
+        #history_factor = (self.history_threshold - history_level - 1) * 2
+        history_factor = fibonacci((self.history_threshold - history_level - 1))
         coefficient = fibonacci(base + history_factor)
         return coefficient
 
@@ -668,32 +675,37 @@ class Dealer(object):
             result = OrderedDict()
             total = 0
             too_much = False
+            invalid_result = False
             # Scores without history.
-            for operation, coeff in [('score_team_target_team', 5), ]:
+            for operation, coeff in [('score_team_target_team', 7), ]:
+                invalid_result = False
                 score = getattr(self, operation)(deal, coeff)
-                if score == -1:
-                    too_much = True
+                if score is INVALID_RESULT:
+                    invalid_result = True
                     break
                 total += score
                 if best_result and total >= best_result['score']:
                     too_much = True
                     break
                 result[operation] = score
-            if too_much:
+            if invalid_result:
                 continue
+            if too_much:
+                if best_result is not None:
+                    continue
             # Scores with history.
             history_levels = self.history_threshold
             for i in range(0, history_levels):
                 for operation, coeff in [
-                        ('score_same_target', 12),  #
-                        ('score_direct_revenge', 7),  #
-                        ('score_target_teammate', 4),  # 3, 13, 55...
+                        ('score_same_target', 20),  #
+                        ('score_direct_revenge', 10),  #
+                        ('score_target_teammate', 6),  # 3, 13, 55...
                         ('score_same_target_as_teammate', 3),  # 2, 8, 34...
                         ('score_teammate_revenge', 2),  # 1, 5, 21...
                         ]:
                     score = getattr(self, operation)(deal, i, coeff)
-                    if score == -1:
-                        too_much = True
+                    if score is INVALID_RESULT:
+                        invalid_result = True
                         break
                     total += score
                     if best_result and total >= best_result['score']:
@@ -702,15 +714,18 @@ class Dealer(object):
                     result['%s_%d' % (operation, i)] = score
                 if too_much:
                     break
-            if too_much:
+            if invalid_result:
                 continue
+            if too_much:
+                if best_result is not None:
+                    continue
             result['deal'] = deal
             result['score'] = total
             if total == 0:  # We got an winner!
-                print '%d  --> %s' % (count_iterations, result)
+                print 'BIG DEAL! %d  --> %s' % (count_iterations, result)
                 yield result
                 break
             if not best_result or (best_result and result['score'] < best_result['score']):
                 best_result = result
-                print '%d  --> %s' % (count_iterations, result)
+                print 'GETTING BETTER : %d  --> %s' % (count_iterations, result)
                 yield result
